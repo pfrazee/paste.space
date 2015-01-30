@@ -11,7 +11,7 @@
     "browserify": "mkdir -p js; browserify -o js/index.js src/index.js",
     "css": "mkdir -p css; lessc less/index.less css/index.css",
     "build": "mkdir -p js; browserify -o js/index.js src/index.js; mkdir -p css; lessc less/index.less css/index.css",
-    "server": "python -m SimpleHTTPServer 2050"
+    "server": "node server.js"
   },
   "dependencies": {
     "hyperscript": "~1.4.3",
