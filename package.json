@@ -1,0 +1,23 @@
+{
+  "name": "paste.space",
+  "description": "a data-publishing utility",
+  "version": "0.0.0",
+  "homepage": "https://github.com/pfraze/paste.space",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/pfraze/paste.space.git"
+  },
+  "scripts": {
+    "browserify": "mkdir -p js; browserify -o js/home.js src/home.js",
+    "css": "mkdir -p css; lessc less/home.less css/home.css",
+    "build": "mkdir -p js; browserify -o js/home.js src/home.js; mkdir -p css; lessc less/home.less css/home.css"
+  },
+  "dependencies": {
+  },
+  "devDependencies": {
+    "browserify": "~6.2.0",
+    "less": "~1.7.5"
+  },
+  "author": "Paul Frazee <pfrazee@gmail.com>",
+  "license": "MIT"
+}
