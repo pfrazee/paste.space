@@ -130,7 +130,7 @@ sbot.login = function () {
 }
 sbot.logout = function () {
   auth.deauth('localhost')
-  sbot.chan.close()
+  ssbchan.close()
 }
 
 function serialize (stream) {
