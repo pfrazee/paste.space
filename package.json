@@ -10,7 +10,8 @@
   "scripts": {
     "browserify": "mkdir -p js; browserify -o js/home.js src/home.js",
     "css": "mkdir -p css; lessc less/home.less css/home.css",
-    "build": "mkdir -p js; browserify -o js/home.js src/home.js; mkdir -p css; lessc less/home.less css/home.css"
+    "build": "mkdir -p js; browserify -o js/home.js src/home.js; mkdir -p css; lessc less/home.less css/home.css",
+    "server": "python -m SimpleHTTPServer 2050"
   },
   "dependencies": {
   },
