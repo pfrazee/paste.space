@@ -1,6 +1,6 @@
 # paste.space
 
-publish files and media to your network of followers. powered by [secure scuttlebutt](https://github.com/ssbc/scuttlebot).
+publish files and media to your network of followers.
 
 ## setup
 
