@@ -21,9 +21,8 @@ module.exports = function (req, res, next) {
       }
 
       redis.multi()
-        .rpush('pastes',                 body.msg.key)
-        .set('paste:'+body.msg.key,      JSON.stringify(body.msg))
-        .set('paste-blob:'+body.msg.key, body.blob)
+        .rpush('msgs',            body.msg.key)
+        .set('msg:'+body.msg.key, JSON.stringify(body.msg))
         .exec(function (err) {
           if (err) {
             console.error(err)

@@ -1,6 +1,7 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+var pull = require('pull-stream')
 var sbot = require('./lib/scuttlebot')
-var view = require('./view')
+var com = require('../../views/com')
 
 var loginBtn = document.getElementById('loginbtn')
 var logoutBtn = document.getElementById('logoutbtn')
@@ -15,19 +16,11 @@ sbot.on('ready', function() {
   sbot.ssb.whoami(function(err, id) {
     console.log('whoami', err, id)
   })
-  view.posts(postsDiv, sbot.ssb)
-  view.form(formDiv, function (e) {
-    e.preventDefault()
-    var msg = { type: 'paste.space/post', title: e.target.title.value }
-    if (!msg.title)
-      return
-    sbot.ssb.add(msg, function (err) {
-      if (err)
-        console.error(err)
-      e.target.reset()
-      view.posts(postsDiv, sbot.ssb)
-    })
-  })
+
+  postsDiv.innerHTML = ''
+  pull(sbot.ssb.messagesByType({ type: 'post', limit: 30, reverse: true }), pull.drain(function (post) {
+    postsDiv.appendChild(com.messageSummary(post))
+  }))
 })
 sbot.on('error', function() {
   loginBtn.removeAttribute('disabled')
@@ -44,7 +37,7 @@ logoutBtn.onclick = function(e){
   loginBtn.removeAttribute('disabled')
   logoutBtn.setAttribute('disabled', true)
 }
-},{"./lib/scuttlebot":2,"./view":4}],2:[function(require,module,exports){
+},{"../../views/com":57,"./lib/scuttlebot":2,"pull-stream":40}],2:[function(require,module,exports){
 var muxrpc = require('muxrpc')
 var Serializer = require('pull-serializer')
 var chan = require('ssb-channel')
@@ -91,7 +84,7 @@ sbot.logout = function () {
 function serialize (stream) {
   return Serializer(stream, JSON, {split: '\n\n'})
 }
-},{"./ssb-manifest":3,"events":6,"muxrpc":17,"pull-serializer":30,"ssb-channel":53,"ssb-domain-auth":55}],3:[function(require,module,exports){
+},{"./ssb-manifest":3,"events":5,"muxrpc":16,"pull-serializer":30,"ssb-channel":53,"ssb-domain-auth":55}],3:[function(require,module,exports){
 module.exports = {
   // protocol
   auth: 'async',
@@ -171,37 +164,8 @@ module.exports = {
   }
 }
 },{}],4:[function(require,module,exports){
-var pull = require('pull-stream')
-var h = require('hyperscript')
 
-exports.posts = function (el, ssb) {
-  el.innerHTML = ''
-  pull(ssb.messagesByType({ type: 'paste.space/post', limit: 30 }), pull.drain(function (post) {
-    el.appendChild(renderPost(post))
-  }))
-}
-
-function renderPost (post) {
-  try {
-    var c = post.value.content
-    return h('h3', c.title)
-  }
-  catch (e) {
-    console.warn('Bad paste.space/post', e, post)
-  }
-}
-
-exports.form = function (el, onsubmit) {
-  el.innerHTML = ''
-  el.appendChild(h('form', { onsubmit: onsubmit },
-    h('p', h('label', 'Title: ', h('input', { type: 'text', name: 'title' }))),
-    h('p', h('label', 'Content: ', h('textarea', { name: 'data', rows: 10 }))),
-    h('p', h('button', { type: 'submit' }, 'Post'))
-  ))
-}
-},{"hyperscript":13,"pull-stream":40}],5:[function(require,module,exports){
-
-},{}],6:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -504,7 +468,7 @@ function isUndefined(arg) {
   return arg === void 0;
 }
 
-},{}],7:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -592,7 +556,7 @@ process.chdir = function (dir) {
     throw new Error('process.chdir is not supported');
 };
 
-},{}],8:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 (function (global){
 /*! http://mths.be/punycode v1.2.4 by @mathias */
 ;(function(root) {
@@ -1103,7 +1067,7 @@ process.chdir = function (dir) {
 }(this));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],9:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -1189,7 +1153,7 @@ var isArray = Array.isArray || function (xs) {
   return Object.prototype.toString.call(xs) === '[object Array]';
 };
 
-},{}],10:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -1276,13 +1240,13 @@ var objectKeys = Object.keys || function (obj) {
   return res;
 };
 
-},{}],11:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 'use strict';
 
 exports.decode = exports.parse = require('./decode');
 exports.encode = exports.stringify = require('./encode');
 
-},{"./decode":9,"./encode":10}],12:[function(require,module,exports){
+},{"./decode":8,"./encode":9}],11:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -1991,7 +1955,7 @@ function isNullOrUndefined(arg) {
   return  arg == null;
 }
 
-},{"punycode":8,"querystring":11}],13:[function(require,module,exports){
+},{"punycode":7,"querystring":10}],12:[function(require,module,exports){
 var split = require('browser-split')
 var ClassList = require('class-list')
 require('html-element')
@@ -2138,7 +2102,7 @@ function isArray (arr) {
   return Object.prototype.toString.call(arr) == '[object Array]'
 }
 
-},{"browser-split":14,"class-list":15,"html-element":5}],14:[function(require,module,exports){
+},{"browser-split":13,"class-list":14,"html-element":4}],13:[function(require,module,exports){
 /*!
  * Cross-Browser Split 1.1.1
  * Copyright 2007-2012 Steven Levithan <stevenlevithan.com>
@@ -2246,7 +2210,7 @@ module.exports = (function split(undef) {
   return self;
 })();
 
-},{}],15:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 // contains, add, remove, toggle
 var indexof = require('indexof')
 
@@ -2347,7 +2311,7 @@ function isTruthy(value) {
     return !!value
 }
 
-},{"indexof":16}],16:[function(require,module,exports){
+},{"indexof":15}],15:[function(require,module,exports){
 
 var indexOf = [].indexOf;
 
@@ -2358,7 +2322,7 @@ module.exports = function(arr, obj){
   }
   return -1;
 };
-},{}],17:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 'use strict'
 var pull         = require('pull-stream')
 var pullWeird    = require('./pull-weird')
@@ -2647,7 +2611,7 @@ module.exports = function (remoteApi, localApi, serializer) {
   }
 }
 
-},{"./permissions":27,"./pull-weird":28,"events":6,"packet-stream":18,"pull-goodbye":20,"pull-stream":21}],18:[function(require,module,exports){
+},{"./permissions":26,"./pull-weird":27,"events":5,"packet-stream":17,"pull-goodbye":19,"pull-stream":20}],17:[function(require,module,exports){
 function flat(err) {
   if(!err) return err
   if(err === true) return true
@@ -2859,7 +2823,7 @@ module.exports = function (opts, name) {
   }
 }
 
-},{}],19:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 
 module.exports = function endable (goodbye) {
   var ended, waiting, sentEnd
@@ -2887,7 +2851,7 @@ module.exports = function endable (goodbye) {
 }
 
 
-},{}],20:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 
 var endable = require('./endable')
 var pull = require('pull-stream')
@@ -2912,7 +2876,7 @@ module.exports = function (stream, goodbye) {
 
 }
 
-},{"./endable":19,"pull-stream":21}],21:[function(require,module,exports){
+},{"./endable":18,"pull-stream":20}],20:[function(require,module,exports){
 var sources  = require('./sources')
 var sinks    = require('./sinks')
 var throughs = require('./throughs')
@@ -2988,7 +2952,7 @@ exports.Sink    = exports.pipeableSink   = u.Sink
 
 
 
-},{"./maybe":22,"./sinks":24,"./sources":25,"./throughs":26,"pull-core":23}],22:[function(require,module,exports){
+},{"./maybe":21,"./sinks":23,"./sources":24,"./throughs":25,"pull-core":22}],21:[function(require,module,exports){
 var u = require('pull-core')
 var prop = u.prop
 var id   = u.id
@@ -3053,7 +3017,7 @@ module.exports = function (pull) {
   return exports
 }
 
-},{"pull-core":23}],23:[function(require,module,exports){
+},{"pull-core":22}],22:[function(require,module,exports){
 exports.id = 
 function (item) {
   return item
@@ -3170,7 +3134,7 @@ function (createSink, cb) {
 }
 
 
-},{}],24:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 var drain = exports.drain = function (read, op, done) {
 
   ;(function next() {
@@ -3212,7 +3176,7 @@ var log = exports.log = function (read, done) {
 }
 
 
-},{}],25:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 
 var keys = exports.keys =
 function (object) {
@@ -3370,7 +3334,7 @@ function (start, createStream) {
 }
 
 
-},{}],26:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 (function (process){
 var u      = require('pull-core')
 var sources = require('./sources')
@@ -3701,7 +3665,7 @@ function (read, mapper) {
 
 
 }).call(this,require('_process'))
-},{"./sinks":24,"./sources":25,"_process":7,"pull-core":23}],27:[function(require,module,exports){
+},{"./sinks":23,"./sources":24,"_process":6,"pull-core":22}],26:[function(require,module,exports){
 var u = require('./util')
 
 var isArray = Array.isArray
@@ -3752,7 +3716,7 @@ module.exports = function () {
   return perms
 }
 
-},{"./util":29}],28:[function(require,module,exports){
+},{"./util":28}],27:[function(require,module,exports){
 var pull = require('pull-stream')
 // wrap pull streams around packet-stream's weird streams.
 
@@ -3829,7 +3793,7 @@ module.exports.sink = function (s, done) {
 }
 
 
-},{"pull-stream":21}],29:[function(require,module,exports){
+},{"pull-stream":20}],28:[function(require,module,exports){
 
 
 exports.set = function (obj, path, value) {
@@ -3866,6 +3830,40 @@ exports.prefix = function (obj, path) {
   }
   return 'object' !== typeof value ? !!value : false
 }
+
+},{}],29:[function(require,module,exports){
+
+;(function() {
+  function createHandler(divisor,noun){
+    return function(diff, useAgo){
+      var n = Math.floor(diff/divisor);
+      return "" + n + noun + ((useAgo) ? ' ago' : '');
+    }
+  }
+
+  var formatters = [
+    { threshold: 1,        handler: function(){ return      "just now" } },
+    { threshold: 60,       handler: createHandler(1,        "s") },
+    { threshold: 3600,     handler: createHandler(60,       "m") },
+    { threshold: 86400,    handler: createHandler(3600,     "h") },
+    { threshold: 172800,   handler: function(){ return      "yesterday" } },
+    { threshold: 604800,   handler: createHandler(86400,    "d") },
+    { threshold: 2592000,  handler: createHandler(604800,   "w") },
+    { threshold: 31536000, handler: createHandler(2592000,  "mo") },
+    { threshold: Infinity, handler: createHandler(31536000, "y") }
+  ];
+
+  module.exports = function (date, useAgo) {
+    var diff = ((Date.now() - +date) / 1000);
+    for( var i=0; i<formatters.length; i++ ){
+      if( diff < formatters[i].threshold ){
+        return formatters[i].handler(diff, useAgo);
+      }
+    }
+    throw new Error("exhausted all formatter options, none found"); //should never be reached
+  }
+})()
+
 
 },{}],30:[function(require,module,exports){
 var pull = require('pull-stream')
@@ -4120,8 +4118,8 @@ module.exports = function (pull) {
 }
 
 },{"pull-core":36}],36:[function(require,module,exports){
-module.exports=require(23)
-},{"/Users/paulfrazee/paste.space/node_modules/muxrpc/node_modules/pull-stream/node_modules/pull-core/index.js":23}],37:[function(require,module,exports){
+module.exports=require(22)
+},{"/Users/paulfrazee/paste.space/node_modules/muxrpc/node_modules/pull-stream/node_modules/pull-core/index.js":22}],37:[function(require,module,exports){
 var drain = exports.drain = function (read, op, done) {
 
   ;(function next() {
@@ -4609,15 +4607,15 @@ function (read, highWaterMark) {
 
 
 }).call(this,require('_process'))
-},{"./sinks":37,"./sources":38,"_process":7,"pull-core":36}],40:[function(require,module,exports){
-arguments[4][21][0].apply(exports,arguments)
-},{"./maybe":41,"./sinks":43,"./sources":44,"./throughs":45,"/Users/paulfrazee/paste.space/node_modules/muxrpc/node_modules/pull-stream/index.js":21,"pull-core":42}],41:[function(require,module,exports){
+},{"./sinks":37,"./sources":38,"_process":6,"pull-core":36}],40:[function(require,module,exports){
+arguments[4][20][0].apply(exports,arguments)
+},{"./maybe":41,"./sinks":43,"./sources":44,"./throughs":45,"/Users/paulfrazee/paste.space/node_modules/muxrpc/node_modules/pull-stream/index.js":20,"pull-core":42}],41:[function(require,module,exports){
+module.exports=require(21)
+},{"/Users/paulfrazee/paste.space/node_modules/muxrpc/node_modules/pull-stream/maybe.js":21,"pull-core":42}],42:[function(require,module,exports){
 module.exports=require(22)
-},{"/Users/paulfrazee/paste.space/node_modules/muxrpc/node_modules/pull-stream/maybe.js":22,"pull-core":42}],42:[function(require,module,exports){
+},{"/Users/paulfrazee/paste.space/node_modules/muxrpc/node_modules/pull-stream/node_modules/pull-core/index.js":22}],43:[function(require,module,exports){
 module.exports=require(23)
-},{"/Users/paulfrazee/paste.space/node_modules/muxrpc/node_modules/pull-stream/node_modules/pull-core/index.js":23}],43:[function(require,module,exports){
-module.exports=require(24)
-},{"/Users/paulfrazee/paste.space/node_modules/muxrpc/node_modules/pull-stream/sinks.js":24}],44:[function(require,module,exports){
+},{"/Users/paulfrazee/paste.space/node_modules/muxrpc/node_modules/pull-stream/sinks.js":23}],44:[function(require,module,exports){
 
 var keys = exports.keys =
 function (object) {
@@ -5101,7 +5099,7 @@ function (read, mapper) {
 
 
 }).call(this,require('_process'))
-},{"./sinks":43,"./sources":44,"_process":7,"pull-core":42}],46:[function(require,module,exports){
+},{"./sinks":43,"./sources":44,"_process":6,"pull-core":42}],46:[function(require,module,exports){
 var ws = require('pull-ws')
 var WebSocket = require('ws')
 var url = require('url')
@@ -5125,7 +5123,7 @@ exports.connect = function (addr, cb) {
 }
 
 
-},{"pull-ws":47,"url":12,"ws":52}],47:[function(require,module,exports){
+},{"pull-ws":47,"url":11,"ws":52}],47:[function(require,module,exports){
 exports = module.exports = duplex;
 
 exports.source = require('./source');
@@ -5345,7 +5343,7 @@ module.exports = pull.Sink(function(read, socket, opts) {
 });
 
 }).call(this,require('_process'))
-},{"./ready":49,"_process":7,"pull-core":48}],51:[function(require,module,exports){
+},{"./ready":49,"_process":6,"pull-core":48}],51:[function(require,module,exports){
 var pull = require('pull-core');
 var ready = require('./ready');
 
@@ -5515,7 +5513,7 @@ exports.connect = function (rpcapi, addr, cb) {
   chan.connect(addr, cb)
   return chan
 }
-},{"events":6,"pull-stream":40,"pull-ws-server":46,"ssb-address":54}],54:[function(require,module,exports){
+},{"events":5,"pull-stream":40,"pull-ws-server":46,"ssb-address":54}],54:[function(require,module,exports){
 
 var DEFAULT_PROTOCOL = 'http:'
 var DEFAULT_PORT = 2000
@@ -5603,6 +5601,28 @@ module.exports = {
     xhr.send()
   }
 }
-},{"querystring":11,"ssb-address":56}],56:[function(require,module,exports){
+},{"querystring":10,"ssb-address":56}],56:[function(require,module,exports){
 module.exports=require(54)
-},{"/Users/paulfrazee/paste.space/node_modules/ssb-channel/node_modules/ssb-address/index.js":54}]},{},[1]);
+},{"/Users/paulfrazee/paste.space/node_modules/ssb-channel/node_modules/ssb-address/index.js":54}],57:[function(require,module,exports){
+exports.messageSummary = require('./message-summary')
+},{"./message-summary":58}],58:[function(require,module,exports){
+var h = require('hyperscript')
+var nicedate = require('nicedate')
+
+module.exports = function (msg) {
+  try {
+    var text = msg.value.content.text
+    if (text.length > 60) {
+      text = text.slice(0, 60) + '...'
+    }
+
+    return h('p.message-summary', 
+      h('small', nicedate(new Date(msg.value.timestamp), true)), h('br'),
+      h('a', { href: '/m/'+msg.key }, text)
+    )
+  }
+  catch (e) {
+    console.error('Failed to render message summary', e, msg)
+  }
+}
+},{"hyperscript":12,"nicedate":29}]},{},[1]);

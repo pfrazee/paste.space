@@ -1,5 +1,6 @@
+var pull = require('pull-stream')
 var sbot = require('./lib/scuttlebot')
-var view = require('./view')
+var com = require('../../views/com')
 
 var loginBtn = document.getElementById('loginbtn')
 var logoutBtn = document.getElementById('logoutbtn')
@@ -14,19 +15,11 @@ sbot.on('ready', function() {
   sbot.ssb.whoami(function(err, id) {
     console.log('whoami', err, id)
   })
-  view.posts(postsDiv, sbot.ssb)
-  view.form(formDiv, function (e) {
-    e.preventDefault()
-    var msg = { type: 'paste.space/post', title: e.target.title.value }
-    if (!msg.title)
-      return
-    sbot.ssb.add(msg, function (err) {
-      if (err)
-        console.error(err)
-      e.target.reset()
-      view.posts(postsDiv, sbot.ssb)
-    })
-  })
+
+  postsDiv.innerHTML = ''
+  pull(sbot.ssb.messagesByType({ type: 'post', limit: 30, reverse: true }), pull.drain(function (post) {
+    postsDiv.appendChild(com.messageSummary(post))
+  }))
 })
 sbot.on('error', function() {
   loginBtn.removeAttribute('disabled')

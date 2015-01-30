@@ -21,7 +21,7 @@ function renderPost (post) {
 exports.form = function (el, onsubmit) {
   el.innerHTML = ''
   el.appendChild(h('form', { onsubmit: onsubmit },
-    h('p', h('label', 'Title: ', h('input', { type: 'text', name: 'title' }))),
+    h('p', h('label', 'Filename: ', h('input', { type: 'text', name: 'filename' }))),
     h('p', h('label', 'Content: ', h('textarea', { name: 'data', rows: 10 }))),
     h('p', h('button', { type: 'submit' }, 'Post'))
   ))
