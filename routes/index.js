@@ -13,13 +13,18 @@ module.exports = function (req, res, next) {
         return next(null, [])
       }
 
-      var done = multicb()
+      var done = multicb({ pluck: 1 })
       keys.forEach(function (key) { redis.get('msg:'+key, done()) })
       done(next)
 
       function next (err, msgs) {
         if (err)
           console.error(err)
+
+        msgs = msgs.map(function (msg) {
+          try { return JSON.parse(msg) }
+          catch (e) { console.log(msg, e); return null }
+        })
 
         s.type(res, 'text/html')
         res.writeHead(200)

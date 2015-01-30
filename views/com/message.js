@@ -3,14 +3,9 @@ var nicedate = require('nicedate')
 
 module.exports = function (msg) {
   try {
-    var text = msg.value.content.text
-    if (text.length > 60) {
-      text = text.slice(0, 60) + '...'
-    }
-
-    return h('.message-summary', 
+    return h('.message', 
       h('div', h('small', nicedate(new Date(msg.value.timestamp), true))),
-      h('div', h('a', { href: '/m/'+msg.key }, text))
+      h('div', msg.value.content.text)
     )
   }
   catch (e) {

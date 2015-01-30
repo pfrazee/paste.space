@@ -8,10 +8,12 @@
     "url": "git://github.com/pfraze/paste.space.git"
   },
   "scripts": {
-    "browserify": "mkdir -p client/js; browserify -o client/js/index.js client/src/index.js",
-    "css": "mkdir -p client/css; lessc client/less/index.less client/css/index.css",
-    "build": "mkdir -p client/js; browserify -o client/js/index.js client/src/index.js; mkdir -p client/css; lessc client/less/index.less client/css/index.css",
-    "server": "node server.js"
+    "build-js-index": "browserify -o client/js/index.js client/src/index.js",
+    "build-js-message": "browserify -o client/js/message.js client/src/message.js",
+    "build-js": "mkdir -p client/js; npm run build-js-index; npm run build-js-message",
+    "build-css": "mkdir -p client/css; lessc client/less/index.less client/css/index.css",
+    "build": "npm run build-js; npm run build-css",
+    "start": "node server.js"
   },
   "dependencies": {
     "hyperscript": "~1.4.3",
@@ -23,6 +25,7 @@
     "pull-serializer": "~0.3.1",
     "pull-ws-server": "~1.1.1",
     "redis": "~0.12.1",
+
     "ssb-channel": "~1.0.1",
     "ssb-domain-auth": "~1.0.0",
     "ssb-keys": "~0.3.0",

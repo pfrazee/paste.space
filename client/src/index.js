@@ -1,16 +1,12 @@
 var pull = require('pull-stream')
 var sbot = require('./lib/scuttlebot')
+var dec = require('./decorators')
 var com = require('../../views/com')
 
-var loginBtn = document.getElementById('loginbtn')
-var logoutBtn = document.getElementById('logoutbtn')
 var postsDiv = document.getElementById('postsdiv')
-var formDiv = document.getElementById('formdiv')
+dec.login(document.getElementById('loginbtn'), document.getElementById('logoutbtn'))
 
 sbot.on('ready', function() {
-  loginBtn.setAttribute('disabled', true)
-  logoutBtn.removeAttribute('disabled')
-
   // :TODO: this should include a challenge for the server to sign, proving ownership of the keypair
   sbot.ssb.whoami(function(err, id) {
     console.log('whoami', err, id)
@@ -21,18 +17,3 @@ sbot.on('ready', function() {
     postsDiv.appendChild(com.messageSummary(post))
   }))
 })
-sbot.on('error', function() {
-  loginBtn.removeAttribute('disabled')
-  logoutBtn.setAttribute('disabled', true)
-})
-
-loginBtn.onclick = function(e){
-  e.preventDefault()
-  sbot.login()
-}
-logoutBtn.onclick = function(e){
-  e.preventDefault()
-  sbot.logout()
-  loginBtn.removeAttribute('disabled')
-  logoutBtn.setAttribute('disabled', true)
-}

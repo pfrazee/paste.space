@@ -25,7 +25,7 @@ module.exports = function (loginBtn, logoutBtn) {
     logoutBtn.setAttribute('disabled', true)
   }
 }
-},{"../lib/scuttlebot":5}],3:[function(require,module,exports){
+},{"../lib/scuttlebot":4}],3:[function(require,module,exports){
 var u = require('../lib/util')
 
 module.exports = function (btn) {
@@ -69,27 +69,7 @@ module.exports = function (btn) {
     }
   }
 }
-},{"../lib/util":7}],4:[function(require,module,exports){
-var pull = require('pull-stream')
-var sbot = require('./lib/scuttlebot')
-var dec = require('./decorators')
-var com = require('../../views/com')
-
-var postsDiv = document.getElementById('postsdiv')
-dec.login(document.getElementById('loginbtn'), document.getElementById('logoutbtn'))
-
-sbot.on('ready', function() {
-  // :TODO: this should include a challenge for the server to sign, proving ownership of the keypair
-  sbot.ssb.whoami(function(err, id) {
-    console.log('whoami', err, id)
-  })
-
-  postsDiv.innerHTML = ''
-  pull(sbot.ssb.messagesByType({ type: 'post', limit: 30, reverse: true }), pull.drain(function (post) {
-    postsDiv.appendChild(com.messageSummary(post))
-  }))
-})
-},{"../../views/com":61,"./decorators":1,"./lib/scuttlebot":5,"pull-stream":44}],5:[function(require,module,exports){
+},{"../lib/util":6}],4:[function(require,module,exports){
 var muxrpc = require('muxrpc')
 var Serializer = require('pull-serializer')
 var chan = require('ssb-channel')
@@ -136,7 +116,7 @@ sbot.logout = function () {
 function serialize (stream) {
   return Serializer(stream, JSON, {split: '\n\n'})
 }
-},{"./ssb-manifest":6,"events":9,"muxrpc":20,"pull-serializer":34,"ssb-channel":57,"ssb-domain-auth":59}],6:[function(require,module,exports){
+},{"./ssb-manifest":5,"events":9,"muxrpc":20,"pull-serializer":34,"ssb-channel":57,"ssb-domain-auth":59}],5:[function(require,module,exports){
 module.exports = {
   // protocol
   auth: 'async',
@@ -215,7 +195,7 @@ module.exports = {
     getIdsByName: 'async'
   }
 }
-},{}],7:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 exports.getJson = function(path, cb) {
   var xhr = new XMLHttpRequest()
   xhr.open('GET', path, true)
@@ -246,7 +226,33 @@ exports.postJson = function(path, obj, cb) {
   }
   xhr.send(JSON.stringify(obj))
 }
-},{}],8:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
+var pull = require('pull-stream')
+var sbot = require('./lib/scuttlebot')
+var dec = require('./decorators')
+var com = require('../../views/com')
+
+var messageDiv = document.getElementById('message')
+var key = window.location.pathname.slice(3)
+var isPublished = (messageDiv.childNodes.length !== 0)
+
+// setup ui
+dec.login(document.getElementById('loginbtn'), document.getElementById('logoutbtn'))
+var publisher = dec.publisher(document.getElementById('publishbtn'))
+publisher.setPublished(isPublished)
+
+// sbot interactions
+sbot.on('ready', function() {
+  if (!isPublished) {
+    // not found on server, try local
+    sbot.ssb.get(key, function (err, value) {
+      var msg = { key: key, value: value }
+      messageDiv.appendChild(com.message(msg))
+      publisher.setAvailable(true, msg)
+    })
+  }
+})
+},{"../../views/com":61,"./decorators":1,"./lib/scuttlebot":4,"pull-stream":44}],8:[function(require,module,exports){
 
 },{}],9:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
@@ -5724,4 +5730,4 @@ module.exports = function (msg) {
     console.error('Failed to render message summary', e, msg)
   }
 }
-},{"hyperscript":16,"nicedate":33}]},{},[4]);
+},{"hyperscript":16,"nicedate":33}]},{},[7]);
