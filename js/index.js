@@ -1,4 +1,6 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+
+},{}],2:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -301,7 +303,7 @@ function isUndefined(arg) {
   return arg === void 0;
 }
 
-},{}],2:[function(require,module,exports){
+},{}],3:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -389,7 +391,7 @@ process.chdir = function (dir) {
     throw new Error('process.chdir is not supported');
 };
 
-},{}],3:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 (function (global){
 /*! http://mths.be/punycode v1.2.4 by @mathias */
 ;(function(root) {
@@ -900,7 +902,7 @@ process.chdir = function (dir) {
 }(this));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],4:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -986,7 +988,7 @@ var isArray = Array.isArray || function (xs) {
   return Object.prototype.toString.call(xs) === '[object Array]';
 };
 
-},{}],5:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -1073,13 +1075,13 @@ var objectKeys = Object.keys || function (obj) {
   return res;
 };
 
-},{}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 'use strict';
 
 exports.decode = exports.parse = require('./decode');
 exports.encode = exports.stringify = require('./encode');
 
-},{"./decode":4,"./encode":5}],7:[function(require,module,exports){
+},{"./decode":5,"./encode":6}],8:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -1788,7 +1790,374 @@ function isNullOrUndefined(arg) {
   return  arg == null;
 }
 
-},{"punycode":3,"querystring":6}],8:[function(require,module,exports){
+},{"punycode":4,"querystring":7}],9:[function(require,module,exports){
+var split = require('browser-split')
+var ClassList = require('class-list')
+require('html-element')
+
+function context () {
+
+  var cleanupFuncs = []
+
+  function h() {
+    var args = [].slice.call(arguments), e = null
+    function item (l) {
+      var r
+      function parseClass (string) {
+        var m = split(string, /([\.#]?[a-zA-Z0-9_:-]+)/)
+        if(/^\.|#/.test(m[1]))
+          e = document.createElement('div')
+        forEach(m, function (v) {
+          var s = v.substring(1,v.length)
+          if(!v) return
+          if(!e)
+            e = document.createElement(v)
+          else if (v[0] === '.')
+            ClassList(e).add(s)
+          else if (v[0] === '#')
+            e.setAttribute('id', s)
+        })
+      }
+
+      if(l == null)
+        ;
+      else if('string' === typeof l) {
+        if(!e)
+          parseClass(l)
+        else
+          e.appendChild(r = document.createTextNode(l))
+      }
+      else if('number' === typeof l
+        || 'boolean' === typeof l
+        || l instanceof Date
+        || l instanceof RegExp ) {
+          e.appendChild(r = document.createTextNode(l.toString()))
+      }
+      //there might be a better way to handle this...
+      else if (isArray(l))
+        forEach(l, item)
+      else if(isNode(l))
+        e.appendChild(r = l)
+      else if(l instanceof Text)
+        e.appendChild(r = l)
+      else if ('object' === typeof l) {
+        for (var k in l) {
+          if('function' === typeof l[k]) {
+            if(/^on\w+/.test(k)) {
+              (function (k, l) { // capture k, l in the closure
+                if (e.addEventListener){
+                  e.addEventListener(k.substring(2), l[k], false)
+                  cleanupFuncs.push(function(){
+                    e.removeEventListener(k.substring(2), l[k], false)
+                  })
+                }else{
+                  e.attachEvent(k, l[k])
+                  cleanupFuncs.push(function(){
+                    e.detachEvent(k, l[k])
+                  })
+                }
+              })(k, l)
+            } else {
+              // observable
+              e[k] = l[k]()
+              cleanupFuncs.push(l[k](function (v) {
+                e[k] = v
+              }))
+            }
+          }
+          else if(k === 'style') {
+            if('string' === typeof l[k]) {
+              e.style.cssText = l[k]
+            }else{
+              for (var s in l[k]) (function(s, v) {
+                if('function' === typeof v) {
+                  // observable
+                  e.style.setProperty(s, v())
+                  cleanupFuncs.push(v(function (val) {
+                    e.style.setProperty(s, val)
+                  }))
+                } else
+                  e.style.setProperty(s, l[k][s])
+              })(s, l[k][s])
+            }
+          } else if (k.substr(0, 5) === "data-") {
+            e.setAttribute(k, l[k])
+          } else {
+            e[k] = l[k]
+          }
+        }
+      } else if ('function' === typeof l) {
+        //assume it's an observable!
+        var v = l()
+        e.appendChild(r = isNode(v) ? v : document.createTextNode(v))
+
+        cleanupFuncs.push(l(function (v) {
+          if(isNode(v) && r.parentElement)
+            r.parentElement.replaceChild(v, r), r = v
+          else
+            r.textContent = v
+        }))
+      }
+
+      return r
+    }
+    while(args.length)
+      item(args.shift())
+
+    return e
+  }
+
+  h.cleanup = function () {
+    for (var i = 0; i < cleanupFuncs.length; i++){
+      cleanupFuncs[i]()
+    }
+    cleanupFuncs.length = 0
+  }
+
+  return h
+}
+
+var h = module.exports = context()
+h.context = context
+
+function isNode (el) {
+  return el && el.nodeName && el.nodeType
+}
+
+function isText (el) {
+  return el && el.nodeName === '#text' && el.nodeType == 3
+}
+
+function forEach (arr, fn) {
+  if (arr.forEach) return arr.forEach(fn)
+  for (var i = 0; i < arr.length; i++) fn(arr[i], i)
+}
+
+function isArray (arr) {
+  return Object.prototype.toString.call(arr) == '[object Array]'
+}
+
+},{"browser-split":10,"class-list":11,"html-element":1}],10:[function(require,module,exports){
+/*!
+ * Cross-Browser Split 1.1.1
+ * Copyright 2007-2012 Steven Levithan <stevenlevithan.com>
+ * Available under the MIT License
+ * ECMAScript compliant, uniform cross-browser split method
+ */
+
+/**
+ * Splits a string into an array of strings using a regex or string separator. Matches of the
+ * separator are not included in the result array. However, if `separator` is a regex that contains
+ * capturing groups, backreferences are spliced into the result each time `separator` is matched.
+ * Fixes browser bugs compared to the native `String.prototype.split` and can be used reliably
+ * cross-browser.
+ * @param {String} str String to split.
+ * @param {RegExp|String} separator Regex or string to use for separating the string.
+ * @param {Number} [limit] Maximum number of items to include in the result array.
+ * @returns {Array} Array of substrings.
+ * @example
+ *
+ * // Basic use
+ * split('a b c d', ' ');
+ * // -> ['a', 'b', 'c', 'd']
+ *
+ * // With limit
+ * split('a b c d', ' ', 2);
+ * // -> ['a', 'b']
+ *
+ * // Backreferences in result array
+ * split('..word1 word2..', /([a-z]+)(\d+)/i);
+ * // -> ['..', 'word', '1', ' ', 'word', '2', '..']
+ */
+module.exports = (function split(undef) {
+
+  var nativeSplit = String.prototype.split,
+    compliantExecNpcg = /()??/.exec("")[1] === undef,
+    // NPCG: nonparticipating capturing group
+    self;
+
+  self = function(str, separator, limit) {
+    // If `separator` is not a regex, use `nativeSplit`
+    if (Object.prototype.toString.call(separator) !== "[object RegExp]") {
+      return nativeSplit.call(str, separator, limit);
+    }
+    var output = [],
+      flags = (separator.ignoreCase ? "i" : "") + (separator.multiline ? "m" : "") + (separator.extended ? "x" : "") + // Proposed for ES6
+      (separator.sticky ? "y" : ""),
+      // Firefox 3+
+      lastLastIndex = 0,
+      // Make `global` and avoid `lastIndex` issues by working with a copy
+      separator = new RegExp(separator.source, flags + "g"),
+      separator2, match, lastIndex, lastLength;
+    str += ""; // Type-convert
+    if (!compliantExecNpcg) {
+      // Doesn't need flags gy, but they don't hurt
+      separator2 = new RegExp("^" + separator.source + "$(?!\\s)", flags);
+    }
+    /* Values for `limit`, per the spec:
+     * If undefined: 4294967295 // Math.pow(2, 32) - 1
+     * If 0, Infinity, or NaN: 0
+     * If positive number: limit = Math.floor(limit); if (limit > 4294967295) limit -= 4294967296;
+     * If negative number: 4294967296 - Math.floor(Math.abs(limit))
+     * If other: Type-convert, then use the above rules
+     */
+    limit = limit === undef ? -1 >>> 0 : // Math.pow(2, 32) - 1
+    limit >>> 0; // ToUint32(limit)
+    while (match = separator.exec(str)) {
+      // `separator.lastIndex` is not reliable cross-browser
+      lastIndex = match.index + match[0].length;
+      if (lastIndex > lastLastIndex) {
+        output.push(str.slice(lastLastIndex, match.index));
+        // Fix browsers whose `exec` methods don't consistently return `undefined` for
+        // nonparticipating capturing groups
+        if (!compliantExecNpcg && match.length > 1) {
+          match[0].replace(separator2, function() {
+            for (var i = 1; i < arguments.length - 2; i++) {
+              if (arguments[i] === undef) {
+                match[i] = undef;
+              }
+            }
+          });
+        }
+        if (match.length > 1 && match.index < str.length) {
+          Array.prototype.push.apply(output, match.slice(1));
+        }
+        lastLength = match[0].length;
+        lastLastIndex = lastIndex;
+        if (output.length >= limit) {
+          break;
+        }
+      }
+      if (separator.lastIndex === match.index) {
+        separator.lastIndex++; // Avoid an infinite loop
+      }
+    }
+    if (lastLastIndex === str.length) {
+      if (lastLength || !separator.test("")) {
+        output.push("");
+      }
+    } else {
+      output.push(str.slice(lastLastIndex));
+    }
+    return output.length > limit ? output.slice(0, limit) : output;
+  };
+
+  return self;
+})();
+
+},{}],11:[function(require,module,exports){
+// contains, add, remove, toggle
+var indexof = require('indexof')
+
+module.exports = ClassList
+
+function ClassList(elem) {
+    var cl = elem.classList
+
+    if (cl) {
+        return cl
+    }
+
+    var classList = {
+        add: add
+        , remove: remove
+        , contains: contains
+        , toggle: toggle
+        , toString: $toString
+        , length: 0
+        , item: item
+    }
+
+    return classList
+
+    function add(token) {
+        var list = getTokens()
+        if (indexof(list, token) > -1) {
+            return
+        }
+        list.push(token)
+        setTokens(list)
+    }
+
+    function remove(token) {
+        var list = getTokens()
+            , index = indexof(list, token)
+
+        if (index === -1) {
+            return
+        }
+
+        list.splice(index, 1)
+        setTokens(list)
+    }
+
+    function contains(token) {
+        return indexof(getTokens(), token) > -1
+    }
+
+    function toggle(token) {
+        if (contains(token)) {
+            remove(token)
+            return false
+        } else {
+            add(token)
+            return true
+        }
+    }
+
+    function $toString() {
+        return elem.className
+    }
+
+    function item(index) {
+        var tokens = getTokens()
+        return tokens[index] || null
+    }
+
+    function getTokens() {
+        var className = elem.className
+
+        return filter(className.split(" "), isTruthy)
+    }
+
+    function setTokens(list) {
+        var length = list.length
+
+        elem.className = list.join(" ")
+        classList.length = length
+
+        for (var i = 0; i < list.length; i++) {
+            classList[i] = list[i]
+        }
+
+        delete list[length]
+    }
+}
+
+function filter (arr, fn) {
+    var ret = []
+    for (var i = 0; i < arr.length; i++) {
+        if (fn(arr[i])) ret.push(arr[i])
+    }
+    return ret
+}
+
+function isTruthy(value) {
+    return !!value
+}
+
+},{"indexof":12}],12:[function(require,module,exports){
+
+var indexOf = [].indexOf;
+
+module.exports = function(arr, obj){
+  if (indexOf) return arr.indexOf(obj);
+  for (var i = 0; i < arr.length; ++i) {
+    if (arr[i] === obj) return i;
+  }
+  return -1;
+};
+},{}],13:[function(require,module,exports){
 'use strict'
 var pull         = require('pull-stream')
 var pullWeird    = require('./pull-weird')
@@ -2077,7 +2446,7 @@ module.exports = function (remoteApi, localApi, serializer) {
   }
 }
 
-},{"./permissions":18,"./pull-weird":19,"events":1,"packet-stream":9,"pull-goodbye":11,"pull-stream":12}],9:[function(require,module,exports){
+},{"./permissions":23,"./pull-weird":24,"events":2,"packet-stream":14,"pull-goodbye":16,"pull-stream":17}],14:[function(require,module,exports){
 function flat(err) {
   if(!err) return err
   if(err === true) return true
@@ -2289,7 +2658,7 @@ module.exports = function (opts, name) {
   }
 }
 
-},{}],10:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 
 module.exports = function endable (goodbye) {
   var ended, waiting, sentEnd
@@ -2317,7 +2686,7 @@ module.exports = function endable (goodbye) {
 }
 
 
-},{}],11:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 
 var endable = require('./endable')
 var pull = require('pull-stream')
@@ -2342,7 +2711,7 @@ module.exports = function (stream, goodbye) {
 
 }
 
-},{"./endable":10,"pull-stream":12}],12:[function(require,module,exports){
+},{"./endable":15,"pull-stream":17}],17:[function(require,module,exports){
 var sources  = require('./sources')
 var sinks    = require('./sinks')
 var throughs = require('./throughs')
@@ -2418,7 +2787,7 @@ exports.Sink    = exports.pipeableSink   = u.Sink
 
 
 
-},{"./maybe":13,"./sinks":15,"./sources":16,"./throughs":17,"pull-core":14}],13:[function(require,module,exports){
+},{"./maybe":18,"./sinks":20,"./sources":21,"./throughs":22,"pull-core":19}],18:[function(require,module,exports){
 var u = require('pull-core')
 var prop = u.prop
 var id   = u.id
@@ -2483,7 +2852,7 @@ module.exports = function (pull) {
   return exports
 }
 
-},{"pull-core":14}],14:[function(require,module,exports){
+},{"pull-core":19}],19:[function(require,module,exports){
 exports.id = 
 function (item) {
   return item
@@ -2600,7 +2969,7 @@ function (createSink, cb) {
 }
 
 
-},{}],15:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 var drain = exports.drain = function (read, op, done) {
 
   ;(function next() {
@@ -2642,7 +3011,7 @@ var log = exports.log = function (read, done) {
 }
 
 
-},{}],16:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 
 var keys = exports.keys =
 function (object) {
@@ -2800,7 +3169,7 @@ function (start, createStream) {
 }
 
 
-},{}],17:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
 (function (process){
 var u      = require('pull-core')
 var sources = require('./sources')
@@ -3131,7 +3500,7 @@ function (read, mapper) {
 
 
 }).call(this,require('_process'))
-},{"./sinks":15,"./sources":16,"_process":2,"pull-core":14}],18:[function(require,module,exports){
+},{"./sinks":20,"./sources":21,"_process":3,"pull-core":19}],23:[function(require,module,exports){
 var u = require('./util')
 
 var isArray = Array.isArray
@@ -3182,7 +3551,7 @@ module.exports = function () {
   return perms
 }
 
-},{"./util":20}],19:[function(require,module,exports){
+},{"./util":25}],24:[function(require,module,exports){
 var pull = require('pull-stream')
 // wrap pull streams around packet-stream's weird streams.
 
@@ -3259,7 +3628,7 @@ module.exports.sink = function (s, done) {
 }
 
 
-},{"pull-stream":12}],20:[function(require,module,exports){
+},{"pull-stream":17}],25:[function(require,module,exports){
 
 
 exports.set = function (obj, path, value) {
@@ -3297,7 +3666,7 @@ exports.prefix = function (obj, path) {
   return 'object' !== typeof value ? !!value : false
 }
 
-},{}],21:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 var pull = require('pull-stream')
 var splitter = require('pull-split')
 
@@ -3330,7 +3699,7 @@ module.exports = function (ps, _JSON, opts) {
   }
 }
 
-},{"pull-split":22,"pull-stream":31}],22:[function(require,module,exports){
+},{"pull-split":27,"pull-stream":36}],27:[function(require,module,exports){
 var through = require('pull-through')
 
 module.exports = function split (matcher, mapper, reverse) {
@@ -3369,7 +3738,7 @@ module.exports = function split (matcher, mapper, reverse) {
 }
 
 
-},{"pull-through":23}],23:[function(require,module,exports){
+},{"pull-through":28}],28:[function(require,module,exports){
 var pull = require('pull-stream')
 var looper = require('looper')
 
@@ -3422,7 +3791,7 @@ module.exports = pull.pipeable(function (read, writer, ender) {
 })
 
 
-},{"looper":24,"pull-stream":25}],24:[function(require,module,exports){
+},{"looper":29,"pull-stream":30}],29:[function(require,module,exports){
 
 var looper = module.exports = function (fun) {
   (function next () {
@@ -3438,7 +3807,7 @@ var looper = module.exports = function (fun) {
   })()
 }
 
-},{}],25:[function(require,module,exports){
+},{}],30:[function(require,module,exports){
 var sources  = require('./sources')
 var sinks    = require('./sinks')
 var throughs = require('./throughs')
@@ -3484,7 +3853,7 @@ exports.Sink    = exports.pipeableSink   = u.Sink
 
 
 
-},{"./maybe":26,"./sinks":28,"./sources":29,"./throughs":30,"pull-core":27}],26:[function(require,module,exports){
+},{"./maybe":31,"./sinks":33,"./sources":34,"./throughs":35,"pull-core":32}],31:[function(require,module,exports){
 var u = require('pull-core')
 var prop = u.prop
 var id   = u.id
@@ -3549,9 +3918,9 @@ module.exports = function (pull) {
   return exports
 }
 
-},{"pull-core":27}],27:[function(require,module,exports){
-module.exports=require(14)
-},{"/Users/paulfrazee/paste.space/node_modules/muxrpc/node_modules/pull-stream/node_modules/pull-core/index.js":14}],28:[function(require,module,exports){
+},{"pull-core":32}],32:[function(require,module,exports){
+module.exports=require(19)
+},{"/Users/paulfrazee/paste.space/node_modules/muxrpc/node_modules/pull-stream/node_modules/pull-core/index.js":19}],33:[function(require,module,exports){
 var drain = exports.drain = function (read, op, done) {
 
   ;(function next() {
@@ -3591,7 +3960,7 @@ var log = exports.log = function (read, done) {
 }
 
 
-},{}],29:[function(require,module,exports){
+},{}],34:[function(require,module,exports){
 
 var keys = exports.keys =
 function (object) {
@@ -3743,7 +4112,7 @@ function (start, createStream) {
 }
 
 
-},{}],30:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
 (function (process){
 var u      = require('pull-core')
 var sources = require('./sources')
@@ -4039,15 +4408,15 @@ function (read, highWaterMark) {
 
 
 }).call(this,require('_process'))
-},{"./sinks":28,"./sources":29,"_process":2,"pull-core":27}],31:[function(require,module,exports){
-arguments[4][12][0].apply(exports,arguments)
-},{"./maybe":32,"./sinks":34,"./sources":35,"./throughs":36,"/Users/paulfrazee/paste.space/node_modules/muxrpc/node_modules/pull-stream/index.js":12,"pull-core":33}],32:[function(require,module,exports){
-module.exports=require(13)
-},{"/Users/paulfrazee/paste.space/node_modules/muxrpc/node_modules/pull-stream/maybe.js":13,"pull-core":33}],33:[function(require,module,exports){
-module.exports=require(14)
-},{"/Users/paulfrazee/paste.space/node_modules/muxrpc/node_modules/pull-stream/node_modules/pull-core/index.js":14}],34:[function(require,module,exports){
-module.exports=require(15)
-},{"/Users/paulfrazee/paste.space/node_modules/muxrpc/node_modules/pull-stream/sinks.js":15}],35:[function(require,module,exports){
+},{"./sinks":33,"./sources":34,"_process":3,"pull-core":32}],36:[function(require,module,exports){
+arguments[4][17][0].apply(exports,arguments)
+},{"./maybe":37,"./sinks":39,"./sources":40,"./throughs":41,"/Users/paulfrazee/paste.space/node_modules/muxrpc/node_modules/pull-stream/index.js":17,"pull-core":38}],37:[function(require,module,exports){
+module.exports=require(18)
+},{"/Users/paulfrazee/paste.space/node_modules/muxrpc/node_modules/pull-stream/maybe.js":18,"pull-core":38}],38:[function(require,module,exports){
+module.exports=require(19)
+},{"/Users/paulfrazee/paste.space/node_modules/muxrpc/node_modules/pull-stream/node_modules/pull-core/index.js":19}],39:[function(require,module,exports){
+module.exports=require(20)
+},{"/Users/paulfrazee/paste.space/node_modules/muxrpc/node_modules/pull-stream/sinks.js":20}],40:[function(require,module,exports){
 
 var keys = exports.keys =
 function (object) {
@@ -4199,7 +4568,7 @@ function (start, createStream) {
 }
 
 
-},{}],36:[function(require,module,exports){
+},{}],41:[function(require,module,exports){
 (function (process){
 var u      = require('pull-core')
 var sources = require('./sources')
@@ -4531,7 +4900,7 @@ function (read, mapper) {
 
 
 }).call(this,require('_process'))
-},{"./sinks":34,"./sources":35,"_process":2,"pull-core":33}],37:[function(require,module,exports){
+},{"./sinks":39,"./sources":40,"_process":3,"pull-core":38}],42:[function(require,module,exports){
 var ws = require('pull-ws')
 var WebSocket = require('ws')
 var url = require('url')
@@ -4555,7 +4924,7 @@ exports.connect = function (addr, cb) {
 }
 
 
-},{"pull-ws":38,"url":7,"ws":43}],38:[function(require,module,exports){
+},{"pull-ws":43,"url":8,"ws":48}],43:[function(require,module,exports){
 exports = module.exports = duplex;
 
 exports.source = require('./source');
@@ -4568,7 +4937,7 @@ function duplex (ws, opts) {
   };
 };
 
-},{"./sink":41,"./source":42}],39:[function(require,module,exports){
+},{"./sink":46,"./source":47}],44:[function(require,module,exports){
 exports.id = 
 function (item) {
   return item
@@ -4687,7 +5056,7 @@ function (createSink, cb) {
 }
 
 
-},{}],40:[function(require,module,exports){
+},{}],45:[function(require,module,exports){
 module.exports = function(socket, callback) {
   var remove = socket && (socket.removeEventListener || socket.removeListener);
 
@@ -4720,7 +5089,7 @@ module.exports = function(socket, callback) {
   socket.addEventListener('error', handleErr);
 };
 
-},{}],41:[function(require,module,exports){
+},{}],46:[function(require,module,exports){
 (function (process){
 var pull = require('pull-core');
 var ready = require('./ready');
@@ -4775,7 +5144,7 @@ module.exports = pull.Sink(function(read, socket, opts) {
 });
 
 }).call(this,require('_process'))
-},{"./ready":40,"_process":2,"pull-core":39}],42:[function(require,module,exports){
+},{"./ready":45,"_process":3,"pull-core":44}],47:[function(require,module,exports){
 var pull = require('pull-core');
 var ready = require('./ready');
 
@@ -4852,7 +5221,7 @@ module.exports = pull.Source(function(socket) {
   return read;
 });
 
-},{"./ready":40,"pull-core":39}],43:[function(require,module,exports){
+},{"./ready":45,"pull-core":44}],48:[function(require,module,exports){
 
 /**
  * Module dependencies.
@@ -4897,7 +5266,7 @@ function ws(uri, protocols, opts) {
 
 if (WebSocket) ws.prototype = WebSocket.prototype;
 
-},{}],44:[function(require,module,exports){
+},{}],49:[function(require,module,exports){
 var pull = require('pull-stream')
 var ws   = require('pull-ws-server')
 var EventEmitter = require('events').EventEmitter
@@ -4945,7 +5314,7 @@ exports.connect = function (rpcapi, addr, cb) {
   chan.connect(addr, cb)
   return chan
 }
-},{"events":1,"pull-stream":31,"pull-ws-server":37,"ssb-address":45}],45:[function(require,module,exports){
+},{"events":2,"pull-stream":36,"pull-ws-server":42,"ssb-address":50}],50:[function(require,module,exports){
 
 var DEFAULT_PROTOCOL = 'http:'
 var DEFAULT_PORT = 2000
@@ -4967,7 +5336,7 @@ module.exports = function (addr) {
   addr.domain = addr.protocol+'//'+addr.host+':'+addr.port
   return addr
 }
-},{}],46:[function(require,module,exports){
+},{}],51:[function(require,module,exports){
 var querystr = require('querystring')
 var address = require('ssb-address')
 
@@ -5033,17 +5402,64 @@ module.exports = {
     xhr.send()
   }
 }
-},{"querystring":6,"ssb-address":47}],47:[function(require,module,exports){
-module.exports=require(45)
-},{"/Users/paulfrazee/paste.space/node_modules/ssb-channel/node_modules/ssb-address/index.js":45}],48:[function(require,module,exports){
+},{"querystring":7,"ssb-address":52}],52:[function(require,module,exports){
+module.exports=require(50)
+},{"/Users/paulfrazee/paste.space/node_modules/ssb-channel/node_modules/ssb-address/index.js":50}],53:[function(require,module,exports){
+var sbot = require('./lib/scuttlebot')
+var view = require('./view')
+
+var loginBtn = document.getElementById('loginbtn')
+var logoutBtn = document.getElementById('logoutbtn')
+var postsDiv = document.getElementById('postsdiv')
+var formDiv = document.getElementById('formdiv')
+
+sbot.on('ready', function() {
+  loginBtn.setAttribute('disabled', true)
+  logoutBtn.removeAttribute('disabled')
+
+  // :TODO: this should include a challenge for the server to sign, proving ownership of the keypair
+  sbot.ssb.whoami(function(err, id) {
+    console.log('whoami', err, id)
+  })
+  view.posts(postsDiv, sbot.ssb)
+  view.form(formDiv, function (e) {
+    e.preventDefault()
+    var msg = { type: 'paste.space/post', title: e.target.title.value }
+    if (!msg.title)
+      return
+    sbot.ssb.add(msg, function (err) {
+      if (err)
+        console.error(err)
+      e.target.reset()
+      view.posts(postsDiv, sbot.ssb)
+    })
+  })
+})
+sbot.on('error', function() {
+  loginBtn.removeAttribute('disabled')
+  logoutBtn.setAttribute('disabled', true)
+})
+
+loginBtn.onclick = function(e){
+  e.preventDefault()
+  sbot.login()
+}
+logoutBtn.onclick = function(e){
+  e.preventDefault()
+  sbot.logout()
+  loginBtn.removeAttribute('disabled')
+  logoutBtn.setAttribute('disabled', true)
+}
+},{"./lib/scuttlebot":54,"./view":56}],54:[function(require,module,exports){
 var muxrpc = require('muxrpc')
 var Serializer = require('pull-serializer')
 var chan = require('ssb-channel')
 var auth = require('ssb-domain-auth')
-var loginBtn = document.getElementById('loginbtn')
-var logoutBtn = document.getElementById('logoutbtn')
+var events = require('events')
 
-var ssb = muxrpc(require('./ssb-manifest'), false, serialize)()
+var sbot = module.exports = new events.EventEmitter()
+
+var ssb = sbot.ssb = muxrpc(require('./ssb-manifest'), false, serialize)()
 var ssbchan = chan.connect(ssb, 'localhost')
 ssbchan.on('connect', function() {
   console.log('Connected')
@@ -5051,47 +5467,37 @@ ssbchan.on('connect', function() {
     if (err) return ssbchan.close(), console.log('Token fetch failed', err)
     ssb.auth(token, function(err) {
       if (err) return ssbchan.close(), console.log('Auth failed')
-      loginBtn.setAttribute('disabled', true)
-      logoutBtn.removeAttribute('disabled')
-
-      // :TODO: this should include a challenge for the server to sign, proving ownership of the keypair
-      ssb.whoami(function(err, id) {
-        console.log('whoami', err, id)
-      })
+      sbot.emit('ready')
     })
   })
 })
-ssbchan.on('reconnecting', function() {
+ssbchan.on('reconnecting', function () {
   console.log('Reconnecting')
+  sbot.emit('reconnecting')
 })
-ssbchan.on('error', function() {
+ssbchan.on('error', function (err) {
   console.log('Connection failed')
-  loginBtn.removeAttribute('disabled')
-  logoutBtn.setAttribute('disabled', true)
+  sbot.emit('error', err)
 })
 
-loginBtn.onclick = function(e){
-  e.preventDefault()
+sbot.login = function () {
   auth.openAuthPopup('localhost', {
-    title: '3rd-party App Auth Test',
+    title: 'paste.space',
     perms: ['whoami', 'add', 'messagesByType', 'createLogStream']
   }, function(err, granted) {
     if (granted)
       ssbchan.reconnect({ wait: 0 })
   })
 }
-logoutBtn.onclick = function(e){
-  e.preventDefault()
+sbot.logout = function () {
   auth.deauth('localhost')
-  ssbchan.close()
-  loginBtn.removeAttribute('disabled')
-  logoutBtn.setAttribute('disabled', true)
+  sbot.chan.close()
 }
 
 function serialize (stream) {
   return Serializer(stream, JSON, {split: '\n\n'})
 }
-},{"./ssb-manifest":49,"muxrpc":8,"pull-serializer":21,"ssb-channel":44,"ssb-domain-auth":46}],49:[function(require,module,exports){
+},{"./ssb-manifest":55,"events":2,"muxrpc":13,"pull-serializer":26,"ssb-channel":49,"ssb-domain-auth":51}],55:[function(require,module,exports){
 module.exports = {
   // protocol
   auth: 'async',
@@ -5170,4 +5576,33 @@ module.exports = {
     getIdsByName: 'async'
   }
 }
-},{}]},{},[48]);
+},{}],56:[function(require,module,exports){
+var pull = require('pull-stream')
+var h = require('hyperscript')
+
+exports.posts = function (el, ssb) {
+  el.innerHTML = ''
+  pull(ssb.messagesByType({ type: 'paste.space/post', limit: 30 }), pull.drain(function (post) {
+    el.appendChild(renderPost(post))
+  }))
+}
+
+function renderPost (post) {
+  try {
+    var c = post.value.content
+    return h('h3', c.title)
+  }
+  catch (e) {
+    console.warn('Bad paste.space/post', e, post)
+  }
+}
+
+exports.form = function (el, onsubmit) {
+  el.innerHTML = ''
+  el.appendChild(h('form', { onsubmit: onsubmit },
+    h('p', h('label', 'Title: ', h('input', { type: 'text', name: 'title' }))),
+    h('p', h('label', 'Content: ', h('textarea', { name: 'data', rows: 10 }))),
+    h('p', h('button', { type: 'submit' }, 'Post'))
+  ))
+}
+},{"hyperscript":9,"pull-stream":36}]},{},[53]);

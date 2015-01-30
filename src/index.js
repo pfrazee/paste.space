@@ -1,55 +1,45 @@
-var muxrpc = require('muxrpc')
-var Serializer = require('pull-serializer')
-var chan = require('ssb-channel')
-var auth = require('ssb-domain-auth')
+var sbot = require('./lib/scuttlebot')
+var view = require('./view')
+
 var loginBtn = document.getElementById('loginbtn')
 var logoutBtn = document.getElementById('logoutbtn')
+var postsDiv = document.getElementById('postsdiv')
+var formDiv = document.getElementById('formdiv')
 
-var ssb = muxrpc(require('./ssb-manifest'), false, serialize)()
-var ssbchan = chan.connect(ssb, 'localhost')
-ssbchan.on('connect', function() {
-  console.log('Connected')
-  auth.getToken('localhost', function(err, token) {
-    if (err) return ssbchan.close(), console.log('Token fetch failed', err)
-    ssb.auth(token, function(err) {
-      if (err) return ssbchan.close(), console.log('Auth failed')
-      loginBtn.setAttribute('disabled', true)
-      logoutBtn.removeAttribute('disabled')
+sbot.on('ready', function() {
+  loginBtn.setAttribute('disabled', true)
+  logoutBtn.removeAttribute('disabled')
 
-      // :TODO: this should include a challenge for the server to sign, proving ownership of the keypair
-      ssb.whoami(function(err, id) {
-        console.log('whoami', err, id)
-      })
+  // :TODO: this should include a challenge for the server to sign, proving ownership of the keypair
+  sbot.ssb.whoami(function(err, id) {
+    console.log('whoami', err, id)
+  })
+  view.posts(postsDiv, sbot.ssb)
+  view.form(formDiv, function (e) {
+    e.preventDefault()
+    var msg = { type: 'paste.space/post', title: e.target.title.value }
+    if (!msg.title)
+      return
+    sbot.ssb.add(msg, function (err) {
+      if (err)
+        console.error(err)
+      e.target.reset()
+      view.posts(postsDiv, sbot.ssb)
     })
   })
 })
-ssbchan.on('reconnecting', function() {
-  console.log('Reconnecting')
-})
-ssbchan.on('error', function() {
-  console.log('Connection failed')
+sbot.on('error', function() {
   loginBtn.removeAttribute('disabled')
   logoutBtn.setAttribute('disabled', true)
 })
 
 loginBtn.onclick = function(e){
   e.preventDefault()
-  auth.openAuthPopup('localhost', {
-    title: '3rd-party App Auth Test',
-    perms: ['whoami', 'add', 'messagesByType', 'createLogStream']
-  }, function(err, granted) {
-    if (granted)
-      ssbchan.reconnect({ wait: 0 })
-  })
+  sbot.login()
 }
 logoutBtn.onclick = function(e){
   e.preventDefault()
-  auth.deauth('localhost')
-  ssbchan.close()
+  sbot.logout()
   loginBtn.removeAttribute('disabled')
   logoutBtn.setAttribute('disabled', true)
-}
-
-function serialize (stream) {
-  return Serializer(stream, JSON, {split: '\n\n'})
 }

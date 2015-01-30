@@ -14,6 +14,7 @@
     "server": "python -m SimpleHTTPServer 2050"
   },
   "dependencies": {
+    "hyperscript": "~1.4.3",
     "muxrpc": "~3.3.0",
     "pull-stream": "~2.24.1",
     "pull-serializer": "~0.3.1",
