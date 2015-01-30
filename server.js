@@ -5,7 +5,7 @@ var path = require('path')
 var PORT = 8050
 
 function onRequest(req, res) {
-  function resolve(file) { return path.join(__dirname, file) }
+  function resolve(file) { return path.join(__dirname, 'client', file) }
   function pathStarts(v) { return req.url.indexOf(v) === 0; }
   function pathEnds(v) { return req.url.indexOf(v) === (req.url.length - v.length); }
   function type (t) { res.setHeader('Content-Type', t) }
