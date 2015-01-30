@@ -8,12 +8,21 @@
     "url": "git://github.com/pfraze/paste.space.git"
   },
   "scripts": {
-    "browserify": "mkdir -p js; browserify -o js/home.js src/home.js",
-    "css": "mkdir -p css; lessc less/home.less css/home.css",
-    "build": "mkdir -p js; browserify -o js/home.js src/home.js; mkdir -p css; lessc less/home.less css/home.css",
+    "browserify": "mkdir -p js; browserify -o js/index.js src/index.js",
+    "css": "mkdir -p css; lessc less/index.less css/index.css",
+    "build": "mkdir -p js; browserify -o js/index.js src/index.js; mkdir -p css; lessc less/index.less css/index.css",
     "server": "python -m SimpleHTTPServer 2050"
   },
   "dependencies": {
+    "muxrpc": "~3.3.0",
+    "pull-stream": "~2.24.1",
+    "pull-serializer": "~0.3.1",
+    "pull-ws-server": "~1.1.1",
+    "ssb-channel": "~1.0.1",
+    "ssb-domain-auth": "~1.0.0",
+    "ssb-keys": "~0.3.0",
+    "ssb-msgs": "~2.0.0",
+    "ssb-msg-schemas": "~1.0.0"
   },
   "devDependencies": {
     "browserify": "~6.2.0",
