@@ -1,4 +1,5 @@
 .DS_Store
 node_modules
 npm-debug.log
-/client/img
+/client/img/fatcow-hosting-icons-3.9.2/FatCow_Icons16x16
+/client/img/fatcow-hosting-icons-3.9.2/FatCow_Icons32x32
