@@ -5729,14 +5729,14 @@ var nicedate = require('nicedate')
 var com = require('./')
 
 var summaryOf = {
-  init: function (msg) { return 'new source, '+msg.value.author },
+  init: function (msg) { return 'new feed: '+msg.value.author },
   name: function (msg) { return msg.value.content.name },
   post: function (msg) { return msg.value.content.text },
   follow: function (msg) {
     if (msg.value.content.rel == 'follows')
-      return 'TODO followed TODO'
+      return 'follow'
     if (msg.value.content.rel == 'unfollows')
-      return 'TODO unfollowed TODO'
+      return 'unfollow'
   },
   pub: function (msg) {
     if (msg.value.content.address.host)
