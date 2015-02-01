@@ -5695,27 +5695,76 @@ module.exports=require(58)
 },{"/Users/paulfrazee/paste.space/node_modules/ssb-channel/node_modules/ssb-address/index.js":58}],61:[function(require,module,exports){
 exports.message = require('./message')
 exports.messageSummary = require('./message-summary')
-},{"./message":63,"./message-summary":62}],62:[function(require,module,exports){
+exports.messageIcon = require('./message-icon')
+},{"./message":64,"./message-icon":62,"./message-summary":63}],62:[function(require,module,exports){
+var h = require('hyperscript')
+
+var iconOf = {
+  init: function (msg) { return 'feed_add' },
+  name: function (msg) { return 'define_name' },
+  post: function (msg) { return 'comment' },
+  follow: function (msg) {
+    if (msg.value.content.rel == 'follows')
+      return 'mark_to_download'
+    if (msg.value.content.rel == 'unfollows')
+      return 'unmark_to_download'
+  },
+  pub: function (msg) { return 'server_information' }
+}
+
+var default_icon = 'emotion_question'
+
+module.exports = function (msg) {
+  var src
+  try { src = iconOf[msg.value.content.type](msg) } catch (e) {}
+  return h('img', { src: path32((src || default_icon)+'.png') })
+}
+
+function path32(s) {
+  return '/img/fatcow-hosting-icons-3.9.2/FatCow_Icons32x32/'+s
+}
+},{"hyperscript":16}],63:[function(require,module,exports){
 var h = require('hyperscript')
 var nicedate = require('nicedate')
+var com = require('./')
+
+var summaryOf = {
+  init: function (msg) { return 'new source, '+msg.value.author },
+  name: function (msg) { return msg.value.content.name },
+  post: function (msg) { return msg.value.content.text },
+  follow: function (msg) {
+    if (msg.value.content.rel == 'follows')
+      return 'TODO followed TODO'
+    if (msg.value.content.rel == 'unfollows')
+      return 'TODO unfollowed TODO'
+  },
+  pub: function (msg) {
+    if (msg.value.content.address.host)
+      return 'pub: '+msg.value.content.address.host+':'+(msg.value.content.address.port||2000)
+    if (msg.value.content.address)
+      return 'pub: '+msg.value.content.address
+  }
+}
 
 module.exports = function (msg) {
   try {
-    var text = msg.value.content.text
+    var text
+    try { text = summaryOf[msg.value.content.type](msg) } catch (e) { console.log(msg, e)}
+    if (!text) text = 'type: '+msg.value.content.type
     if (text.length > 60) {
       text = text.slice(0, 60) + '...'
     }
 
     return h('.message-summary', 
-      h('div', h('small', nicedate(new Date(msg.value.timestamp), true))),
-      h('div', h('a', { href: '/m/'+msg.key }, text))
+      h('div', h('a', { href: '/m/'+msg.key }, com.messageIcon(msg), text)),
+      h('div', h('small', nicedate(new Date(msg.value.timestamp), true)))      
     )
   }
   catch (e) {
     console.error('Failed to render message summary', e, msg)
   }
 }
-},{"hyperscript":16,"nicedate":33}],63:[function(require,module,exports){
+},{"./":61,"hyperscript":16,"nicedate":33}],64:[function(require,module,exports){
 var h = require('hyperscript')
 var nicedate = require('nicedate')
 

@@ -1,6 +1,23 @@
+body {
+  font-family: Helvetica, Arial, sans-serif;
+}
 .message {
   margin-bottom: 1em;
 }
 .message-summary {
-  margin-bottom: 1em;
+  display: inline-block;
+  margin: 6px 6px;
+  overflow: hidden;
+  background: #eee;
+  padding: 10px 22px;
+  border: 1px solid #aaa;
+  border-radius: 5px;
+}
+.message-summary a {
+  color: #808080;
+  text-decoration: none;
+}
+.message-summary small {
+  color: #aaa;
+  font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
 }

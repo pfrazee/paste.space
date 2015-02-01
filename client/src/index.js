@@ -13,7 +13,7 @@ sbot.on('ready', function() {
   })
 
   postsDiv.innerHTML = ''
-  pull(sbot.ssb.messagesByType({ type: 'post', limit: 30, reverse: true }), pull.drain(function (post) {
-    postsDiv.appendChild(com.messageSummary(post))
+  pull(sbot.ssb.createLogStream({ limit: 30, reverse: true, live: true }), pull.drain(function (post) {
+    postsDiv.insertBefore(com.messageSummary(post), postsDiv.firstChild)
   }))
 })
