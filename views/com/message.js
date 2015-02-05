@@ -5,7 +5,7 @@ module.exports = function (msg) {
   try {
     return h('.message', 
       h('div', h('small', nicedate(new Date(msg.value.timestamp), true))),
-      h('div', msg.value.content.text)
+      h('pre', JSON.stringify(msg.value, null, 2))
     )
   }
   catch (e) {
