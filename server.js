@@ -1,16 +1,18 @@
 var http = require('http')
 var stack = require('stack')
+var path = require('path')
+
 var PORT = 8050
+var LIVEBUILD = true
+var ASSETS_PATH = path.join(__dirname, 'client')
 
 http.createServer(stack(
   function (req, res, next) {
     // CSPs
-    res.setHeader('Content-Security-Policy', 'default-src \'self\'; connect-src \'self\' ws://localhost:2000 http://localhost:2000')
+    res.setHeader('Content-Security-Policy', 'default-src \'self\'; script-src \'self\' http://localhost:8008; connect-src \'self\' ws://localhost:8008 http://localhost:8008')
     next()
   },
-  require('./routes/index'),
-  require('./routes/message'),
-  require('./routes/store'),
-  require('./routes/static')
+  require('stack-assets-builder')({ enabled: LIVEBUILD, root: ASSETS_PATH }),
+  require('stack-assets-static')({ root: ASSETS_PATH })
 )).listen(PORT)
 console.log('listening on', PORT)
