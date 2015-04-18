@@ -20,6 +20,7 @@
     "multicb": "~1.1.0",
     "muxrpc": "~3.3.0",
     "nicedate": "~0.0.0",
+    "pull-stream": "^2.26.0",
     "ssb-client": "~1.0.1",
     "ssb-keys": "^0.7.0",
     "stack": "^0.1.0",
