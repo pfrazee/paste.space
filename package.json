@@ -16,7 +16,7 @@
     "start": "node server.js"
   },
   "dependencies": {
-    "hyperscript": "~1.4.3",
+    "hyperscript": "^1.4.6",
     "multicb": "~1.1.0",
     "muxrpc": "~3.3.0",
     "nicedate": "~0.0.0",

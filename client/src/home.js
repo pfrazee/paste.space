@@ -1,6 +1,7 @@
 var SSBClient = require('ssb-client')
 var SSBKeys = require('ssb-keys')
 var pull = require('pull-stream')
+var h = require('hyperscript')
  
 var ssb, feed
 var user = { 
@@ -81,8 +82,39 @@ function loaduser () {
 }
 
 function list () {
-  pull(ssb.messagesByType({ type: 'paste.space/item' }), pull.drain(function (msg) {
-    document.querySelector('.list').innerHTML += '<pre>'+JSON.stringify(msg, 0, 4)+'</pre>'
+  pull(ssb.messagesByType({ type: 'paste.space/item', reverse: true }), pull.drain(function (msg) {
+    var c = msg.value.content
+
+    // validate
+    if (typeof c.title != 'string' || !c.title.trim())
+      return console.warn('Skipping invalid paste.space/item - no .title', msg)
+    if (typeof c.text != 'string' || !c.text.trim())
+      return console.warn('Skipping invalid paste.space/item - no .text', msg)
+
+    // render
+    var textel = h('pre', c.text)
+    $('.list').appendChild(h('div',
+      h('h2', { id: msg.key }, c.title, ' ', h('small', h('a', { href: '#'+msg.key }, 'link'))),
+      textel))
+
+    // check for extensions
+    pull(ssb.messagesLinkedToMessage({ id: msg.key, rel: 'extends', keys: true }), pull.drain(function (msg2) {
+      var c2 = msg2.value.content
+
+      // validate
+      if (msg.value.author != msg2.value.author)
+        return // must be same author
+      if (c2.type != 'paste.space/more')
+        return // wrong type
+      if (typeof c2.text != 'string' || !c2.text.trim())
+        return console.warn('Skipping invalid paste.space/more - no .text', msg)
+
+      // render
+      if (textel.textContent)
+        textel.textContent += c2.text
+      else if (texel.innerText)
+        textel.innerText += c2.text
+    }))
   }))
 }
 
