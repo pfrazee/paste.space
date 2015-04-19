@@ -1,0 +1,41 @@
+body {
+  font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+  background: #ccc;
+}
+#page-container {
+  background: #fff;
+  max-width: 700px;
+  padding: 5px 10px 15px;
+  margin: 0 auto;
+}
+form {
+  margin-bottom: 10px;
+}
+form p {
+  margin: 5px 0;
+}
+form input,
+form textarea {
+  font-size: 16px;
+}
+form input[type="text"],
+form textarea {
+  width: 100%;
+}
+form input[type="text"].error,
+form textarea.error {
+  border-color: red;
+}
+form input[type="reset"] {
+  float: right;
+}
+.add-form {
+  display: none;
+}
+.add-form.visible {
+  display: block;
+}
+pre {
+  font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+  white-space: pre-wrap;
+}
