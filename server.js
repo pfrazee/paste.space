@@ -3,7 +3,7 @@ var stack = require('stack')
 var path = require('path')
 
 var PORT = 8050
-var LIVEBUILD = true
+var LIVEBUILD = process.env.livebuild == 1
 var ASSETS_PATH = path.join(__dirname, 'client')
 
 http.createServer(stack(
@@ -15,4 +15,5 @@ http.createServer(stack(
   require('stack-assets-builder')({ enabled: LIVEBUILD, root: ASSETS_PATH }),
   require('stack-assets-static')({ root: ASSETS_PATH })
 )).listen(PORT)
+console.log('live build', (LIVEBUILD) ? 'enabled' : 'disabled', '(env livebuild='+process.env.livebuild+')')
 console.log('listening on', PORT)
