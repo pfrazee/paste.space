@@ -3,5 +3,48 @@
 @font-family-monospace:   Menlo, Monaco, Consolas, "Courier New", monospace;
 
 body {
-  font-family: @font-family-sans-serif;
+  font-family: @font-family-monospace;
+  background: #ccc;
+}
+
+#page-container {
+  background: #fff;
+  max-width: 700px;
+  padding: 5px 10px;
+  margin: 0 auto;
+}
+
+h1 {
+  font-size: 21px;
+  margin: 0 0 10px;
+}
+
+form {
+  margin-bottom: 10px;
+  p {
+    margin: 5px 0;
+  }
+  input {
+    font-size: 15px;
+  }
+  input[type="text"], textarea {
+    width: 100%;
+    &.error {
+      border-color: red;
+    }
+  }
+  input[type="reset"] {
+    float: right;
+  }
+}
+
+.add-form {
+  display: none;
+  &.visible {
+    display: block;
+  }
+}
+
+.list {
+  
 }

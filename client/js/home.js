@@ -17982,6 +17982,11 @@ var user = {
 setup()
 
 function setup () {
+  // setup gui
+  $('.add-form-show').addEventListener('click', onClickAddformshow)
+  $('.add-form').addEventListener('submit', onSubmitAddform)
+  $('.add-form').addEventListener('reset', onResetAddform)
+
   // load keys
   try {
     user.keys = JSON.parse(localStorage.keys)
@@ -17990,7 +17995,7 @@ function setup () {
     localStorage.keys = JSON.stringify(user.keys)
   }
    
-  // connect
+  // connect to sbot
   ssb = SSBClient({ host: 'localhost' })
   ssb.connect().auth(SSBKeys.createAuth(user.keys), function (err) {
     if(err)
@@ -18048,8 +18053,79 @@ function loaduser () {
 
 function list () {
   pull(ssb.messagesByType({ type: 'paste.space/item' }), pull.drain(function (msg) {
-    document.body.innerHTML += '<pre>'+JSON.stringify(msg, 0, 4)+'</pre>'
+    document.querySelector('.list').innerHTML += '<pre>'+JSON.stringify(msg, 0, 4)+'</pre>'
   }))
+}
+
+function onClickAddformshow (e) {
+  e.preventDefault()
+  $('.add-form').classList.add('visible')
+}
+
+function onSubmitAddform (e) {
+  e.preventDefault()
+  var form = $('.add-form')
+  var title = form.title.value
+  var text = form.text.value
+
+  // validate
+  var errors = ''
+  if (!title.trim()) {
+    form.title.classList.add('error')
+    errors += 'Title is required.\n'
+  } else {
+    form.title.classList.remove('error')
+  }
+  if (!text.trim()) {
+    form.text.classList.add('error')
+    errors += 'Text is required.\n'
+  } else if (text.length > 1e6) {
+    form.text.classList.add('error')
+    errors += 'Text must be less than 1mb.\n'      
+  } else {
+    form.text.classList.remove('error')
+  }
+  if (errors) {
+    $('.add-form-errors').innerHTML = errors
+    return
+  }
+
+  // sanity check
+  if (!feed) {
+    $('.add-form-errors').innerHTML = 'Unable to post - not connected to scuttlebot.'
+    return
+  }
+
+  // post
+  var cursor = 600 - title.length
+  var firstText = text.slice(0, cursor)
+  feed.add({ type: 'paste.space/item', title: title, text: firstText }, function (err, itemmsg) {
+    if (err)
+      return showerr('Failed to publish.', err)
+
+    addRemaining()
+    function addRemaining () {
+      if (cursor >= text.length) {
+        // done
+        $('.add-form').reset()
+        return
+      }
+
+      var remainingText = text.slice(cursor, cursor+500)
+      cursor += 500
+      feed.add({ type: 'paste.space/more', text: remainingText, extends: { msg: itemmsg.key } }, function (err) {
+        if (err)
+          return showerr('Failed to publish full text.', err)
+        addRemaining()
+      })
+    }
+  })
+}
+
+function onResetAddform (e) {
+  $('.add-form').classList.remove('visible')
+  $$('.add-form .error').forEach(function (el) { el.classList.remove('error') })
+  $('.add-form-errors').innerHTML = ''
 }
 
 function showerr (msg, err) {
@@ -18057,6 +18133,13 @@ function showerr (msg, err) {
   alert(msg)
   if (err)
     console.error(msg, err)
+}
+
+function $ (sel) {
+  return document.querySelector(sel)
+}
+function $$ (sel) {
+  return Array.prototype.slice.call(document.querySelectorAll(sel))
 }
 },{"pull-stream":143,"ssb-client":149,"ssb-keys":214}],143:[function(require,module,exports){
 var sources  = require('./sources')

@@ -6,7 +6,17 @@
     <link rel="stylesheet" type="text/css" href="/css/home.css">
   </head>
   <body>
-    <div id="page-container">hello paste.space</div>
+    <div id="page-container">
+      <h1>paste.space <small><a href="#" class="add-form-show">add</a></small></h1>
+      <form class="add-form">
+        <p>Add Paste</p>
+        <p><input type="text" name="title" placeholder="Title"></p>
+        <p><textarea name="text" rows="16"></textarea></p>
+        <pre class="add-form-errors"></pre>
+        <p><input type="submit" value="Post"> <input type="reset" value="Cancel"></p>
+      </form>
+      <div class="list"></div>
+    </div>
     <script src="http://localhost:8008/manifest.js"></script>
     <script src="/js/home.js"></script>
   </body>
