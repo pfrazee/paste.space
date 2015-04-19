@@ -26,14 +26,30 @@ function setup () {
   }
    
   // connect to sbot
+  var pingInterval
   ssb = SSBClient({ host: 'localhost' })
-  ssb.connect().auth(SSBKeys.createAuth(user.keys), function (err) {
-    if(err)
-      return showerr('Failed to authenticate with scuttlebot', err)
-    feed = ssb.createFeed(user.keys)
-    loaduser()
-    list()
-  })
+  ssb.connect()
+  ssb.on('connect', onconnect)
+  ssb.on('close', onclose)
+
+  function onconnect () {
+    ssb.auth(SSBKeys.createAuth(user.keys), function (err) {
+      if(err)
+        return showerr('Failed to authenticate with scuttlebot', err)
+      feed = ssb.createFeed(user.keys)
+      pingInterval = setInterval(function () { ssb.whoami() }, 15e3)
+      loaduser()
+      list()
+    })
+  } 
+
+  function onclose () {
+    clearInterval(pingInterval)
+    console.log('connection lost')
+    console.log('attempting reconnecting in 10 seconds')
+    $('.list').innerHTML = 'No connection to scuttlebot. Make sure sbot is active on port 8008.'
+    ssb.reconnect({ wait: 10e3 })
+  }
 }
 
 function loaduser () {
@@ -82,7 +98,11 @@ function loaduser () {
 }
 
 function list () {
-  pull(ssb.messagesByType({ type: 'paste.space/item', reverse: true }), pull.drain(function (msg) {
+  var listel = $('.list')
+  listel.innerHTML = ''
+  pull(ssb.messagesByType({ type: 'paste.space/item', reverse: false, live: true }), pull.drain(function (msg) {
+    if (msg.sync)
+      return // skip the sync message
     var c = msg.value.content
 
     // validate
@@ -93,9 +113,9 @@ function list () {
 
     // render
     var textel = h('pre', c.text)
-    $('.list').appendChild(h('div',
+    listel.insertBefore(h('div',
       h('h2', { id: msg.key }, c.title, ' ', h('small', h('a', { href: '#'+msg.key }, 'link'))),
-      textel))
+      textel), listel.firstChild)
 
     // check for extensions
     pull(ssb.messagesLinkedToMessage({ id: msg.key, rel: 'extends', keys: true }), pull.drain(function (msg2) {
